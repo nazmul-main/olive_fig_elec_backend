@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const User = require('../models/User');
 
 // @route GET /api/products
 exports.getProducts = async (req, res, next) => {
@@ -50,6 +51,14 @@ exports.updateProduct = async (req, res, next) => {
 // @route DELETE /api/products/:id
 exports.deleteProduct = async (req, res, next) => {
     try {
+        const { password } = req.body;
+        if (!password) return res.status(400).json({ success: false, message: 'Admin password required' });
+
+        // Verify admin password
+        const admin = await User.findById(req.user._id).select('+password');
+        const isMatch = await admin.comparePassword(password);
+        if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid admin password' });
+
         const product = await Product.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
         if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
         res.json({ success: true, message: 'Product deleted' });

@@ -1,4 +1,5 @@
 const Staff = require('../models/Staff');
+const User = require('../models/User');
 
 // @route GET /api/staff
 exports.getStaff = async (req, res, next) => {
@@ -32,6 +33,14 @@ exports.updateStaff = async (req, res, next) => {
 // @route DELETE /api/staff/:id
 exports.deleteStaff = async (req, res, next) => {
     try {
+        const { password } = req.body;
+        if (!password) return res.status(400).json({ success: false, message: 'Admin password required' });
+
+        // Verify admin password
+        const admin = await User.findById(req.user._id).select('+password');
+        const isMatch = await admin.comparePassword(password);
+        if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid admin password' });
+
         const staff = await Staff.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
         if (!staff) return res.status(404).json({ success: false, message: 'Staff not found' });
         res.json({ success: true, message: 'Staff deactivated' });

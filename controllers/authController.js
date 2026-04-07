@@ -44,10 +44,19 @@ exports.getUsers = async (req, res, next) => {
 // @route PATCH /api/auth/users/:id/toggle
 exports.toggleUser = async (req, res, next) => {
     try {
+        const { password } = req.body;
+        if (!password) return res.status(400).json({ success: false, message: 'Admin password required' });
+
+        // Verify admin password
+        const admin = await User.findById(req.user._id).select('+password');
+        const isMatch = await admin.comparePassword(password);
+        if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid admin password' });
+
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        
         user.isActive = !user.isActive;
         await user.save();
-        res.json({ success: true, message: `User ${user.isActive ? 'activated' : 'deactivated'}` });
+        res.json({ success: true, message: `User ${user.isActive ? 'activated' : 'deactivated'} successfully` });
     } catch (err) { next(err); }
 };

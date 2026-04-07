@@ -1,6 +1,7 @@
 const Sale = require('../models/Sale');
 const Product = require('../models/Product');
 const StockHistory = require('../models/StockHistory');
+const User = require('../models/User');
 const generateInvoiceNo = require('../utils/generateInvoiceNo');
 
 // @route POST /api/sales
@@ -85,5 +86,39 @@ exports.getSale = async (req, res, next) => {
         const sale = await Sale.findById(req.params.id).populate('soldBy', 'name email');
         if (!sale) return res.status(404).json({ success: false, message: 'Sale not found' });
         res.json({ success: true, sale });
+    } catch (err) { next(err); }
+};
+
+// @route DELETE /api/sales/:id
+exports.deleteSale = async (req, res, next) => {
+    try {
+        const { password } = req.body;
+        if (!password) return res.status(400).json({ success: false, message: 'Admin password required' });
+
+        // Verify admin password
+        const admin = await User.findById(req.user._id).select('+password');
+        const isMatch = await admin.comparePassword(password);
+        if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid admin password' });
+
+        const sale = await Sale.findById(req.params.id);
+        if (!sale) return res.status(404).json({ success: false, message: 'Sale not found' });
+
+        // Restore Stock
+        for (const item of sale.items) {
+            const product = await Product.findById(item.product);
+            if (product) {
+                const previousStock = product.stockQuantity;
+                const newStock = previousStock + item.quantity;
+                await Product.findByIdAndUpdate(item.product, { $inc: { stockQuantity: item.quantity } });
+                await StockHistory.create({
+                    product: item.product, productName: item.productName, type: 'IN',
+                    quantity: item.quantity, reason: 'sale_deleted',
+                    previousStock, newStock, updatedBy: req.user._id,
+                });
+            }
+        }
+
+        await Sale.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: 'Sale deleted and stock restored successfully' });
     } catch (err) { next(err); }
 };
