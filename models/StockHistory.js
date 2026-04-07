@@ -7,7 +7,7 @@ const stockHistorySchema = new mongoose.Schema({
     quantity: { type: Number, required: true, min: 1 },
     reason: {
         type: String,
-        enum: ['purchase', 'sale', 'adjustment', 'return', 'damage'],
+        enum: ['purchase', 'sale', 'adjustment', 'return', 'damage', 'sale_deleted'],
         required: true,
     },
     previousStock: { type: Number, required: true },
