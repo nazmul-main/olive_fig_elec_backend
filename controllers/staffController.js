@@ -2,7 +2,7 @@ const Staff = require('../models/Staff');
 const User = require('../models/User');
 
 // @route GET /api/staff
-exports.getStaff = async (req, res, next) => {
+exports.getStaff = async function(req, res, next) {
     try {
         const { role, isActive } = req.query;
         const query = {};
@@ -10,28 +10,37 @@ exports.getStaff = async (req, res, next) => {
         if (isActive !== undefined) query.isActive = isActive === 'true';
         const staff = await Staff.find(query).sort({ createdAt: -1 });
         res.json({ success: true, count: staff.length, staff });
-    } catch (err) { next(err); }
+    } catch (err) {
+        if (typeof next === 'function') next(err);
+        else res.status(500).json({ success: false, message: err.message });
+    }
 };
 
 // @route POST /api/staff
-exports.createStaff = async (req, res, next) => {
+exports.createStaff = async function(req, res, next) {
     try {
         const staff = await Staff.create(req.body);
         res.status(201).json({ success: true, staff });
-    } catch (err) { next(err); }
+    } catch (err) {
+        if (typeof next === 'function') next(err);
+        else res.status(500).json({ success: false, message: err.message });
+    }
 };
 
 // @route PUT /api/staff/:id
-exports.updateStaff = async (req, res, next) => {
+exports.updateStaff = async function(req, res, next) {
     try {
         const staff = await Staff.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
         if (!staff) return res.status(404).json({ success: false, message: 'Staff not found' });
         res.json({ success: true, staff });
-    } catch (err) { next(err); }
+    } catch (err) {
+        if (typeof next === 'function') next(err);
+        else res.status(500).json({ success: false, message: err.message });
+    }
 };
 
 // @route DELETE /api/staff/:id
-exports.deleteStaff = async (req, res, next) => {
+exports.deleteStaff = async function(req, res, next) {
     try {
         const { password } = req.body;
         if (!password) return res.status(400).json({ success: false, message: 'Admin password required' });
@@ -44,5 +53,8 @@ exports.deleteStaff = async (req, res, next) => {
         const staff = await Staff.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
         if (!staff) return res.status(404).json({ success: false, message: 'Staff not found' });
         res.json({ success: true, message: 'Staff deactivated' });
-    } catch (err) { next(err); }
+    } catch (err) {
+        if (typeof next === 'function') next(err);
+        else res.status(500).json({ success: false, message: err.message });
+    }
 };

@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-const protect = async (req, res, next) => {
+const protect = async function(req, res, next) {
     try {
         let token;
         if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -15,7 +15,7 @@ const protect = async (req, res, next) => {
         if (!req.user || !req.user.isActive) {
             return res.status(401).json({ success: false, message: 'User not found or inactive' });
         }
-        next();
+        if (typeof next === 'function') next();
     } catch (error) {
         return res.status(401).json({ success: false, message: 'Not authorized, token failed' });
     }
