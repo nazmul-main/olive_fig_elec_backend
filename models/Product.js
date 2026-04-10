@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
     name: { type: String, required: [true, 'Product name is required'], trim: true },
-    sku: {
+    code: {
         type: String,
-        required: [true, 'SKU is required'],
+        required: [true, 'Product code is required'],
         unique: true,
         uppercase: true,
         trim: true,
@@ -19,6 +19,6 @@ const productSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Text index for search
-productSchema.index({ name: 'text', sku: 'text', brand: 'text' });
+productSchema.index({ name: 'text', code: 'text', brand: 'text' });
 
 module.exports = mongoose.model('Product', productSchema);

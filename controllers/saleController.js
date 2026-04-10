@@ -24,7 +24,7 @@ exports.createSale = async (req, res, next) => {
             processedItems.push({
                 product: product._id,
                 productName: product.name,
-                sku: product.sku,
+                code: product.code,
                 quantity: item.quantity,
                 purchasePrice: product.purchasePrice,
                 salePrice: product.salePrice,

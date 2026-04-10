@@ -20,7 +20,7 @@ exports.getDashboardStats = async (req, res, next) => {
             Sale.aggregate([{ $match: { saleDate: { $gte: monthStart } } }, { $group: { _id: null, total: { $sum: '$grandTotal' }, profit: { $sum: { $subtract: ['$grandTotal', { $sum: { $map: { input: '$items', as: 'i', in: { $multiply: ['$$i.purchasePrice', '$$i.quantity'] } } } }] } }, count: { $sum: 1 } } }]),
             Expense.aggregate([{ $match: { date: { $gte: monthStart } } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
             Product.countDocuments({ isActive: true }),
-            Product.find({ isActive: true, stockQuantity: { $lte: 5 } }).limit(10).select('name sku stockQuantity'),
+            Product.find({ isActive: true, stockQuantity: { $lte: 5 } }).limit(10).select('name code stockQuantity'),
             Sale.find().populate('soldBy', 'name').sort({ saleDate: -1 }).limit(8),
         ]);
 
@@ -54,7 +54,7 @@ exports.getInventoryStats = async (req, res, next) => {
         const { page = 1, limit = 20 } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
         const [history, total] = await Promise.all([
-            StockHistory.find().populate('product', 'name sku').populate('updatedBy', 'name').sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+            StockHistory.find().populate('product', 'name code').populate('updatedBy', 'name').sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
             StockHistory.countDocuments(),
         ]);
         res.json({ success: true, total, page: Number(page), pages: Math.ceil(total / Number(limit)), history });

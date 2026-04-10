@@ -25,6 +25,8 @@ app.use('/api/expenses', require('./routes/expenses'));
 app.use('/api/staff', require('./routes/staff'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/reports', require('./routes/reports'));
+app.use('/api/suppliers', require('./routes/suppliers'));
+app.use('/api/purchases', require('./routes/purchases'));
 
 // Health check
 app.get('/', (req, res) => res.json({ success: true, message: '🟢 Olive & Fig Electronics API is Running!' }));
