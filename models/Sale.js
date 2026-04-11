@@ -8,18 +8,24 @@ const saleItemSchema = new mongoose.Schema({
     purchasePrice: { type: Number, required: true },
     salePrice: { type: Number, required: true },
     subtotal: { type: Number, required: true },
+    serialNumbers: [{ type: String, trim: true }], // Array of serial/IMEI strings
 }, { _id: false });
 
 const saleSchema = new mongoose.Schema({
     invoiceNo: { type: String, unique: true, required: true },
+    customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' }, // Reference to Customer model
     customerName: { type: String, trim: true, default: 'Walk-in Customer' },
     customerPhone: { type: String, trim: true },
+    customerEmail: { type: String, trim: true },
+    customerAddress: { type: String, trim: true },
     items: [saleItemSchema],
     subtotal: { type: Number, required: true },
     discount: { type: Number, default: 0 },
     vat: { type: Number, default: 0 },           // percentage
     vatAmount: { type: Number, default: 0 },
     grandTotal: { type: Number, required: true },
+    paidAmount: { type: Number, default: 0, min: 0 }, // Amount paid during sale
+    dueAmount: { type: Number, default: 0 },          // grandTotal - paidAmount
     paymentMethod: {
         type: String,
         enum: ['cash', 'bkash', 'nagad', 'card'],
