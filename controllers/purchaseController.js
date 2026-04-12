@@ -6,10 +6,16 @@ const StockHistory = require('../models/StockHistory');
 // @route GET /api/purchases
 exports.getPurchases = async (req, res, next) => {
     try {
-        const { supplier, brand, page = 1, limit = 20 } = req.query;
+        const { supplier, brand, startDate, endDate, page = 1, limit = 20 } = req.query;
         const query = {};
         if (supplier) query.supplier = supplier;
         if (brand) query.brand = { $regex: brand, $options: 'i' };
+
+        if (startDate || endDate) {
+            query.purchaseDate = {};
+            if (startDate) query.purchaseDate.$gte = new Date(startDate);
+            if (endDate) query.purchaseDate.$lte = new Date(new Date(endDate).setHours(23, 59, 59));
+        }
 
         const skip = (Number(page) - 1) * Number(limit);
         const [purchases, total] = await Promise.all([

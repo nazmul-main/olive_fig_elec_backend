@@ -51,11 +51,19 @@ exports.getDashboardStats = async (req, res, next) => {
 // @route GET /api/dashboard/inventory
 exports.getInventoryStats = async (req, res, next) => {
     try {
-        const { page = 1, limit = 20 } = req.query;
+        const { page = 1, limit = 20, startDate, endDate } = req.query;
+        const query = {};
+
+        if (startDate || endDate) {
+            query.createdAt = {};
+            if (startDate) query.createdAt.$gte = new Date(startDate);
+            if (endDate) query.createdAt.$lte = new Date(new Date(endDate).setHours(23, 59, 59));
+        }
+
         const skip = (Number(page) - 1) * Number(limit);
         const [history, total] = await Promise.all([
-            StockHistory.find().populate('product', 'name code').populate('updatedBy', 'name').sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
-            StockHistory.countDocuments(),
+            StockHistory.find(query).populate('product', 'name code').populate('updatedBy', 'name').sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+            StockHistory.countDocuments(query),
         ]);
         res.json({ success: true, total, page: Number(page), pages: Math.ceil(total / Number(limit)), history });
     } catch (err) { next(err); }
