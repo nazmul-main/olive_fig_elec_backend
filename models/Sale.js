@@ -14,8 +14,8 @@ const saleItemSchema = new mongoose.Schema({
 const saleSchema = new mongoose.Schema({
     invoiceNo: { type: String, unique: true, required: true },
     customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' }, // Reference to Customer model
-    customerName: { type: String, trim: true, default: 'Walk-in Customer' },
-    customerPhone: { type: String, trim: true },
+    customerName: { type: String, trim: true, default: 'Walk-in Customer', index: true },
+    customerPhone: { type: String, trim: true, index: true },
     customerEmail: { type: String, trim: true },
     customerAddress: { type: String, trim: true },
     items: [saleItemSchema],
@@ -33,7 +33,7 @@ const saleSchema = new mongoose.Schema({
     },
     soldBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     note: { type: String, trim: true },
-    saleDate: { type: Date, default: Date.now },
+    saleDate: { type: Date, default: Date.now, index: true },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Sale', saleSchema);

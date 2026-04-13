@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 
 const purchaseSchema = new mongoose.Schema({
     supplier: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier', required: true },
-    supplierName: { type: String, required: true }, // denormalized for history
+    supplierName: { type: String, required: true, index: true }, // denormalized for history
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-    productName: { type: String, required: true },
+    productName: { type: String, required: true, index: true },
     productCode: { type: String, required: true },
     brand: { type: String, required: true },
     category: { type: String, required: true },
@@ -14,7 +14,7 @@ const purchaseSchema = new mongoose.Schema({
     totalAmount: { type: Number, required: true },            // quantity * purchasePrice
     paidAmount: { type: Number, default: 0, min: 0 },        // প্রথমে কত দিলে
     // dueAmount = totalAmount - paidAmount (calculated)
-    purchaseDate: { type: Date, default: Date.now },
+    purchaseDate: { type: Date, default: Date.now, index: true },
     note: { type: String, trim: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 }, { timestamps: true });

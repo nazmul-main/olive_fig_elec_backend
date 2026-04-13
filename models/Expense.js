@@ -7,8 +7,9 @@ const expenseSchema = new mongoose.Schema({
         type: String,
         enum: ['salary', 'electricity', 'rent', 'maintenance', 'marketing', 'others'],
         required: true,
+        index: true
     },
-    date: { type: Date, required: true, default: Date.now },
+    date: { type: Date, required: true, default: Date.now, index: true },
     note: { type: String, trim: true },
     addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 }, { timestamps: true });
