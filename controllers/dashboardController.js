@@ -6,6 +6,8 @@ const StockHistory = require('../models/StockHistory');
 // @route GET /api/dashboard
 exports.getDashboardStats = async (req, res, next) => {
     try {
+        const { chartStart, chartEnd } = req.query;
+        
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -30,12 +32,18 @@ exports.getDashboardStats = async (req, res, next) => {
             { $group: { _id: null, value: { $sum: { $multiply: ['$purchasePrice', '$stockQuantity'] } } } },
         ]);
 
-        // Chart Data (Last 7 Days)
-        const sevenDaysAgo = new Date(todayStart);
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+        // Chart Data Dynamics
+        let startQueryDate = new Date(todayStart);
+        startQueryDate.setDate(startQueryDate.getDate() - 6); // default 7 days ago
+        let endQueryDate = new Date(now);
+
+        if (chartStart && chartEnd) {
+            startQueryDate = new Date(chartStart);
+            endQueryDate = new Date(new Date(chartEnd).setHours(23, 59, 59, 999));
+        }
 
         const dailySalesAgg = await Sale.aggregate([
-            { $match: { saleDate: { $gte: sevenDaysAgo } } },
+            { $match: { saleDate: { $gte: startQueryDate, $lte: endQueryDate } } },
             { 
                 $group: { 
                     _id: { $dateToString: { format: "%Y-%m-%d", date: "$saleDate" } }, 
@@ -46,7 +54,7 @@ exports.getDashboardStats = async (req, res, next) => {
         ]);
 
         const dailyExpensesAgg = await Expense.aggregate([
-            { $match: { date: { $gte: sevenDaysAgo } } },
+            { $match: { date: { $gte: startQueryDate, $lte: endQueryDate } } },
             { 
                 $group: { 
                     _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }, 
@@ -56,15 +64,28 @@ exports.getDashboardStats = async (req, res, next) => {
             { $sort: { _id: 1 } }
         ]);
 
-        // Merge chart data
+        // Calculate days difference
+        const daysDiff = Math.round((endQueryDate - startQueryDate) / (1000 * 60 * 60 * 24)) || 1;
+        
         const chartData = [];
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(sevenDaysAgo);
+        // Cap at 60 points to avoid huge payload, if > 60 days, we could aggregate by month, but simple daily for now until 60
+        const displayDays = Math.min(daysDiff + 1, 90); 
+        
+        for (let i = 0; i < displayDays; i++) {
+            const d = new Date(startQueryDate);
             d.setDate(d.getDate() + i);
-            const dateStr = d.toISOString().split('T')[0];
+            const dateStr = d.toISOString().split('T')[0]; // Format array match YYYY-MM-DD
+            
             const rev = dailySalesAgg.find(x => x._id === dateStr)?.revenue || 0;
             const exp = dailyExpensesAgg.find(x => x._id === dateStr)?.amount || 0;
-            const shortDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+            
+            // Format for display
+            let shortDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+            if (displayDays > 31) {
+                // If more than a month, show Year too sparingly
+                shortDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+            }
+
             chartData.push({ name: shortDate, revenue: rev, expenses: exp });
         }
 
