@@ -30,6 +30,44 @@ exports.getDashboardStats = async (req, res, next) => {
             { $group: { _id: null, value: { $sum: { $multiply: ['$purchasePrice', '$stockQuantity'] } } } },
         ]);
 
+        // Chart Data (Last 7 Days)
+        const sevenDaysAgo = new Date(todayStart);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
+        const dailySalesAgg = await Sale.aggregate([
+            { $match: { saleDate: { $gte: sevenDaysAgo } } },
+            { 
+                $group: { 
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$saleDate" } }, 
+                    revenue: { $sum: '$grandTotal' } 
+                } 
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        const dailyExpensesAgg = await Expense.aggregate([
+            { $match: { date: { $gte: sevenDaysAgo } } },
+            { 
+                $group: { 
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }, 
+                    amount: { $sum: '$amount' } 
+                } 
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        // Merge chart data
+        const chartData = [];
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(sevenDaysAgo);
+            d.setDate(d.getDate() + i);
+            const dateStr = d.toISOString().split('T')[0];
+            const rev = dailySalesAgg.find(x => x._id === dateStr)?.revenue || 0;
+            const exp = dailyExpensesAgg.find(x => x._id === dateStr)?.amount || 0;
+            const shortDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+            chartData.push({ name: shortDate, revenue: rev, expenses: exp });
+        }
+
         res.json({
             success: true,
             stats: {
@@ -44,6 +82,7 @@ exports.getDashboardStats = async (req, res, next) => {
             },
             lowStockProducts,
             recentSales,
+            chartData
         });
     } catch (err) { next(err); }
 };
