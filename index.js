@@ -11,11 +11,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-    origin: [
-        process.env.CLIENT_URL || 'http://localhost:3000', 
-        'http://localhost:3001',
-        'https://olive-fig-elec-frontend.vercel.app'
-    ],
+    origin: true,
     credentials: true,
 }));
 app.use(express.json());
