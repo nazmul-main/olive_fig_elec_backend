@@ -47,7 +47,8 @@ exports.getDashboardStats = async (req, res, next) => {
             { 
                 $group: { 
                     _id: { $dateToString: { format: "%Y-%m-%d", date: "$saleDate" } }, 
-                    revenue: { $sum: '$grandTotal' } 
+                    revenue: { $sum: '$grandTotal' },
+                    sales: { $sum: 1 }
                 } 
             },
             { $sort: { _id: 1 } }
@@ -77,6 +78,7 @@ exports.getDashboardStats = async (req, res, next) => {
             const dateStr = d.toISOString().split('T')[0]; // Format array match YYYY-MM-DD
             
             const rev = dailySalesAgg.find(x => x._id === dateStr)?.revenue || 0;
+            const salesCount = dailySalesAgg.find(x => x._id === dateStr)?.sales || 0;
             const exp = dailyExpensesAgg.find(x => x._id === dateStr)?.amount || 0;
             
             // Format for display
@@ -86,7 +88,7 @@ exports.getDashboardStats = async (req, res, next) => {
                 shortDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
             }
 
-            chartData.push({ name: shortDate, revenue: rev, expenses: exp });
+            chartData.push({ name: shortDate, revenue: rev, expenses: exp, sales: salesCount });
         }
 
         res.json({
