@@ -11,6 +11,7 @@ const productSchema = new mongoose.Schema({
     },
     brand: { type: String, required: [true, 'Brand is required'], trim: true, index: true },
     category: { type: String, required: [true, 'Category is required'], trim: true, index: true },
+    modelNo: { type: String, trim: true },
     purchasePrice: { type: Number, required: [true, 'Purchase price is required'], min: 0 },
     salePrice: { type: Number, required: [true, 'Sale price is required'], min: 0 },
     stockQuantity: { type: Number, required: true, default: 0, min: 0 },
@@ -19,6 +20,6 @@ const productSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Text index for search
-productSchema.index({ name: 'text', code: 'text', brand: 'text' });
+productSchema.index({ name: 'text', code: 'text', brand: 'text', modelNo: 'text' });
 
 module.exports = mongoose.model('Product', productSchema);

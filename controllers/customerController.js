@@ -84,7 +84,27 @@ exports.addPayment = async (req, res, next) => {
             receivedBy: req.user._id
         });
 
-        // Update customer balance
+        // 1. Update Sale records (FIFO: First-In, First-Out)
+        // Find all sales with dueAmount > 0 for this customer, sorted by date (oldest first)
+        let remainingPayment = Number(amount);
+        const outstandingSales = await Sale.find({ 
+            customer: customerId, 
+            dueAmount: { $gt: 0 } 
+        }).sort({ saleDate: 1 });
+
+        for (const sale of outstandingSales) {
+            if (remainingPayment <= 0) break;
+
+            const paymentForThisSale = Math.min(sale.dueAmount, remainingPayment);
+            
+            sale.dueAmount -= paymentForThisSale;
+            sale.paidAmount += paymentForThisSale;
+            await sale.save();
+
+            remainingPayment -= paymentForThisSale;
+        }
+
+        // 2. Update customer balance
         // Note: amount reduces totalDue and increases totalPaid
         customer.totalDue -= amount;
         customer.totalPaid += Number(amount);

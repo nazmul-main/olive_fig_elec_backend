@@ -32,7 +32,7 @@ exports.createPurchase = async (req, res, next) => {
     try {
         const {
             supplierId, productCode, productName, brand, category,
-            quantity, purchasePrice, salePrice, paidAmount = 0, note, purchaseDate
+            quantity, purchasePrice, salePrice, paidAmount = 0, note, purchaseDate, modelNo
         } = req.body;
 
         if (!supplierId || !productCode || !productName || !brand || !category || !quantity || !purchasePrice || !salePrice) {
@@ -56,6 +56,7 @@ exports.createPurchase = async (req, res, next) => {
             product.stockQuantity += quantity;
             product.purchasePrice = purchasePrice; // Update to latest purchase price
             product.salePrice = salePrice;          // Update to latest sale price
+            if (modelNo) product.modelNo = modelNo; // Update modelNo if provided
             await product.save();
 
             // Stock history
@@ -77,6 +78,7 @@ exports.createPurchase = async (req, res, next) => {
                 code: productCode.toUpperCase(),
                 brand,
                 category,
+                modelNo,
                 purchasePrice,
                 salePrice,
                 stockQuantity: quantity,
@@ -104,6 +106,7 @@ exports.createPurchase = async (req, res, next) => {
             product: product._id,
             productName: product.name,
             productCode: product.code,
+            modelNo: product.modelNo || modelNo,
             brand,
             category,
             quantity,
@@ -168,7 +171,7 @@ exports.createBulkPurchase = async (req, res, next) => {
 
         // Loop through each item
         for (const item of items) {
-            const { productCode, productName, category, quantity, purchasePrice, salePrice } = item;
+            const { productCode, productName, category, quantity, purchasePrice, salePrice, modelNo } = item;
             
             const itemTotal = quantity * purchasePrice;
             totalVoucherAmount += itemTotal;
@@ -182,6 +185,7 @@ exports.createBulkPurchase = async (req, res, next) => {
                 product.stockQuantity += quantity;
                 product.purchasePrice = purchasePrice;
                 product.salePrice = salePrice;
+                if (modelNo) product.modelNo = modelNo;
                 await product.save();
 
                 await StockHistory.create({
@@ -201,6 +205,7 @@ exports.createBulkPurchase = async (req, res, next) => {
                     code: productCode.toUpperCase(),
                     brand,
                     category,
+                    modelNo,
                     purchasePrice,
                     salePrice,
                     stockQuantity: quantity,
@@ -227,6 +232,7 @@ exports.createBulkPurchase = async (req, res, next) => {
                 product: product._id,
                 productName: product.name,
                 productCode: product.code,
+                modelNo: product.modelNo || modelNo,
                 brand,
                 category,
                 quantity,

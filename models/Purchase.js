@@ -6,6 +6,7 @@ const purchaseSchema = new mongoose.Schema({
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     productName: { type: String, required: true, index: true },
     productCode: { type: String, required: true },
+    modelNo: { type: String, trim: true },
     brand: { type: String, required: true },
     category: { type: String, required: true },
     quantity: { type: Number, required: true, min: 1 },
