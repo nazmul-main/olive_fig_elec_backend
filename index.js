@@ -23,6 +23,11 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
     : ['http://localhost:3000'];
 
+// Always allow the production frontend URL to avoid CORS blocks
+if (!allowedOrigins.includes('https://olive-fig-elec-frontend.vercel.app')) {
+    allowedOrigins.push('https://olive-fig-elec-frontend.vercel.app');
+}
+
 app.use(cors({
     origin: (origin, callback) => {
         // Allow server-to-server requests (no origin) or whitelisted origins
