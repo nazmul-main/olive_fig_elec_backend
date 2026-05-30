@@ -153,7 +153,8 @@ exports.getSales = async (req, res, next) => {
                 .populate('customer', 'name phone')
                 .sort({ saleDate: -1 })
                 .skip(skip)
-                .limit(Number(limit)),
+                .limit(Number(limit))
+                .lean(),
             Sale.countDocuments(query),
         ]);
         

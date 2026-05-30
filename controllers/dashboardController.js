@@ -3,10 +3,31 @@ const Product = require('../models/Product');
 const Expense = require('../models/Expense');
 const StockHistory = require('../models/StockHistory');
 
+// --- Simple in-memory cache for heavy dashboard aggregations ---
+// Caches results for 5 minutes to avoid repeated expensive DB queries.
+const dashboardCache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function getCached(key) {
+    const entry = dashboardCache.get(key);
+    if (entry && Date.now() - entry.ts < CACHE_TTL_MS) return entry.data;
+    return null;
+}
+function setCache(key, data) {
+    dashboardCache.set(key, { data, ts: Date.now() });
+}
+
+
 // @route GET /api/dashboard
 exports.getDashboardStats = async (req, res, next) => {
     try {
         const { chartStart, chartEnd } = req.query;
+
+        // --- Cache Check: return cached result if available ---
+        const cacheKey = `dashboard_${chartStart || 'default'}_${chartEnd || 'default'}`;
+        const cached = getCached(cacheKey);
+        if (cached) return res.json(cached);
+        // --- End Cache Check ---
         
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -23,7 +44,7 @@ exports.getDashboardStats = async (req, res, next) => {
             Expense.aggregate([{ $match: { date: { $gte: monthStart } } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
             Product.countDocuments({ isActive: true }),
             Product.find({ isActive: true, stockQuantity: { $lte: 5 } }).limit(10).select('name code stockQuantity'),
-            Sale.find().populate('soldBy', 'name').sort({ saleDate: -1 }).limit(8),
+            Sale.find().populate('soldBy', 'name').sort({ saleDate: -1 }).limit(8).lean(),
         ]);
 
         // Stock value
@@ -91,7 +112,7 @@ exports.getDashboardStats = async (req, res, next) => {
             chartData.push({ name: shortDate, revenue: rev, expenses: exp, sales: salesCount });
         }
 
-        res.json({
+        const responseData = {
             success: true,
             stats: {
                 todayRevenue: todaySalesAgg[0]?.total || 0,
@@ -106,7 +127,12 @@ exports.getDashboardStats = async (req, res, next) => {
             lowStockProducts,
             recentSales,
             chartData
-        });
+        };
+
+        // Save to cache for 5 minutes
+        setCache(cacheKey, responseData);
+
+        res.json(responseData);
     } catch (err) { next(err); }
 };
 
